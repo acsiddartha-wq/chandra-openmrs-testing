@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<!--
+    TestNG Suite Configuration
+    Project : OpenMRS Healthcare Testing
+    Author  : Chandra Siddartha
+    Run cmd : mvn test
+
+    LISTENERS:
+    ScreenshotListener implements ITestListener.
+    It is registered here and automatically applied to ALL test classes.
+    No need to add it to individual test classes.
+-->
+<suite name="OpenMRS Test Suite — Chandra Siddartha"
+       verbose="2"
+       preserve-order="true">
+
+    <!-- Global listeners — applied to every test in this suite -->
+    <listeners>
+        <listener class-name="listeners.ScreenshotListener"/>
+    </listeners>
+
+    <!-- ── SMOKE SUITE — run after every new build ──────────────────── -->
+    <test name="Smoke Tests" preserve-order="true">
+        <groups><run><include name="smoke"/></run></groups>
+        <classes>
+            <class name="tests.LoginTest"/>
+            <class name="tests.PatientTest"/>
+        </classes>
+    </test>
+
+    <!-- ── SANITY SUITE — run after a specific bug fix ──────────────── -->
+    <test name="Sanity Tests" preserve-order="true">
+        <groups><run><include name="sanity"/></run></groups>
+        <classes>
+            <class name="tests.LoginTest"/>
+            <class name="tests.PatientTest"/>
+        </classes>
+    </test>
+
+    <!-- ── REGRESSION SUITE — run before every release ─────────────── -->
+    <test name="Regression Tests" preserve-order="true">
+        <groups><run><include name="regression"/></run></groups>
+        <classes>
+            <class name="tests.LoginTest"/>
+            <class name="tests.PatientTest"/>
+        </classes>
+    </test>
+
+    <!-- ── API TESTS — REST Assured ─────────────────────────────────── -->
+    <test name="API Tests" preserve-order="true">
+        <groups><run><include name="api"/></run></groups>
+        <classes>
+            <class name="api.PatientApiTest"/>
+        </classes>
+    </test>
+
+    <!-- ── FULL SUITE — all tests together ──────────────────────────── -->
+    <test name="Full Suite" preserve-order="true">
+        <classes>
+            <class name="tests.LoginTest"/>
+            <class name="tests.PatientTest"/>
+            <class name="api.PatientApiTest"/>
+        </classes>
+    </test>
+
+</suite>
