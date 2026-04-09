@@ -1,0 +1,1825 @@
+{
+  "info": {
+    "name": "OpenMRS API Testing \u2014 Chandra Siddartha",
+    "_postman_id": "openmrs-api-collection-v1",
+    "description": "Complete REST API test suite for OpenMRS.\nTarget Company: Optum\nAuthor: Chandra Siddartha\nBase URL: http://localhost:8080/openmrs/ws/rest/v1\nAuth: Basic Auth (admin / Admin123)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{username}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{password}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/openmrs/ws/rest/v1"
+    },
+    {
+      "key": "username",
+      "value": "admin"
+    },
+    {
+      "key": "password",
+      "value": "Admin123"
+    },
+    {
+      "key": "patient_uuid",
+      "value": ""
+    },
+    {
+      "key": "visit_uuid",
+      "value": ""
+    },
+    {
+      "key": "encounter_uuid",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 \u2014 Authentication",
+      "description": "Verify Basic Auth works correctly with valid and invalid credentials.",
+      "item": [
+        {
+          "name": "API_001 \u2014 Valid Auth \u2014 Get Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/session",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "session"
+              ]
+            },
+            "description": "Verify API is accessible with valid Basic Auth credentials."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_001 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_001 | Response has authenticated=true\", function() {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.authenticated).to.be.true;",
+                  "});",
+                  "pm.test(\"API_001 | Response time < 2000ms\", function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "pm.test(\"API_001 | Content-Type is JSON\", function() {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_002 \u2014 Invalid Auth \u2014 Wrong Password",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/session",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "session"
+              ]
+            },
+            "description": "Verify API returns 401 with wrong password."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_002 | Status 200 but authenticated=false\", function() {",
+                  "    // OpenMRS returns 200 even for bad creds, but authenticated=false",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.authenticated).to.be.false;",
+                  "});",
+                  "pm.test(\"API_002 | No user object in response\", function() {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user).to.be.undefined;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_003 \u2014 No Auth Header",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient"
+              ]
+            },
+            "description": "Verify API returns 401 when no Authorization header is sent."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_003 | Status 401 Unauthorized\", function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 \u2014 Patient API",
+      "description": "CRUD operations on Patient resource.",
+      "item": [
+        {
+          "name": "API_004 \u2014 GET All Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?v=simple&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?v=simple&limit=10"
+              ]
+            },
+            "description": "Retrieve list of patients (limited to 10)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_004 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_004 | Response has results array\", function() {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"results\");",
+                  "    pm.expect(json.results).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"API_004 | Results count <= 10\", function() {",
+                  "    pm.expect(pm.response.json().results.length).to.be.at.most(10);",
+                  "});",
+                  "pm.test(\"API_004 | Each result has uuid and display\", function() {",
+                  "    pm.response.json().results.forEach(function(p) {",
+                  "        pm.expect(p).to.have.property(\"uuid\");",
+                  "        pm.expect(p).to.have.property(\"display\");",
+                  "    });",
+                  "});",
+                  "// Save first patient UUID for downstream tests",
+                  "var results = pm.response.json().results;",
+                  "if (results.length > 0) {",
+                  "    pm.collectionVariables.set(\"patient_uuid\", results[0].uuid);",
+                  "    console.log(\"Saved patient_uuid: \" + results[0].uuid);",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_005 \u2014 POST Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient"
+              ]
+            },
+            "description": "Create a new patient via POST. Saves UUID for downstream tests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person\": {\n    \"names\": [\n      {\n        \"givenName\": \"APITest\",\n        \"familyName\": \"Patient\"\n      }\n    ],\n    \"gender\": \"M\",\n    \"birthdate\": \"1990-05-15\",\n    \"addresses\": [\n      {\n        \"address1\": \"123 API Street\",\n        \"cityVillage\": \"Bangalore\",\n        \"country\": \"India\"\n      }\n    ]\n  },\n  \"identifiers\": [\n    {\n      \"identifier\": \"API-TEST-001\",\n      \"identifierType\": \"05a29f94-c0ed-11e2-94be-8c13b969e334\",\n      \"location\": \"8d6c993e-c2cc-11de-8d13-0010c6dffd0f\",\n      \"preferred\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_005 | Status 201 Created\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"API_005 | Response has uuid\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"uuid\");",
+                  "});",
+                  "pm.test(\"API_005 | Patient display name matches\", function() {",
+                  "    var display = pm.response.json().person.display;",
+                  "    pm.expect(display).to.include(\"APITest\");",
+                  "});",
+                  "pm.test(\"API_005 | Gender is M\", function() {",
+                  "    pm.expect(pm.response.json().person.gender).to.equal(\"M\");",
+                  "});",
+                  "// Save UUID for GET / PUT / DELETE tests",
+                  "var uuid = pm.response.json().uuid;",
+                  "pm.collectionVariables.set(\"patient_uuid\", uuid);",
+                  "console.log(\"Created patient UUID: \" + uuid);",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_006 \u2014 GET Patient by UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/{{patient_uuid}}?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient",
+                "{{patient_uuid}}?v=full"
+              ]
+            },
+            "description": "Retrieve full patient details using saved UUID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_006 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_006 | UUID matches requested UUID\", function() {",
+                  "    pm.expect(pm.response.json().uuid).to.equal(pm.collectionVariables.get(\"patient_uuid\"));",
+                  "});",
+                  "pm.test(\"API_006 | Person object present\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"person\");",
+                  "});",
+                  "pm.test(\"API_006 | Identifiers array not empty\", function() {",
+                  "    pm.expect(pm.response.json().identifiers).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "pm.test(\"API_006 | Gender is present\", function() {",
+                  "    pm.expect(pm.response.json().person.gender).to.be.oneOf([\"M\",\"F\",\"O\"]);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_007 \u2014 GET Patient by Name Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?q=APITest&v=simple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?q=APITest&v=simple"
+              ]
+            },
+            "description": "Search patient by name query parameter."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_007 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_007 | Results array returned\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"API_007 | At least 1 result for 'APITest'\", function() {",
+                  "    pm.expect(pm.response.json().results.length).to.be.greaterThan(0);",
+                  "});",
+                  "pm.test(\"API_007 | Result display contains search term\", function() {",
+                  "    var found = pm.response.json().results.some(function(p) {",
+                  "        return p.display.toLowerCase().includes(\"apitest\");",
+                  "    });",
+                  "    pm.expect(found).to.be.true;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_008 \u2014 GET Patient \u2014 Invalid UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/invalid-uuid-that-does-not-exist",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient",
+                "invalid-uuid-that-does-not-exist"
+              ]
+            },
+            "description": "Verify API returns 404 for non-existent UUID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_008 | Status 404 Not Found\", function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"API_008 | Error message in response\", function() {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"error\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_009 \u2014 POST Patient \u2014 Missing Mandatory Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient"
+              ]
+            },
+            "description": "Verify 400 is returned when mandatory fields are missing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person\": {\n    \"gender\": \"M\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_009 | Status 400 Bad Request\", function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"API_009 | Error message present\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"error\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_010 \u2014 POST Patient \u2014 Duplicate Identifier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient"
+              ]
+            },
+            "description": "Verify duplicate patient identifier is rejected.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"person\": {\n    \"names\": [\n      {\n        \"givenName\": \"Duplicate\",\n        \"familyName\": \"Test\"\n      }\n    ],\n    \"gender\": \"F\",\n    \"birthdate\": \"1995-01-01\"\n  },\n  \"identifiers\": [\n    {\n      \"identifier\": \"API-TEST-001\",\n      \"identifierType\": \"05a29f94-c0ed-11e2-94be-8c13b969e334\",\n      \"location\": \"8d6c993e-c2cc-11de-8d13-0010c6dffd0f\",\n      \"preferred\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_010 | Status 400 or 500 for duplicate identifier\", function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409, 500]);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_011 \u2014 DELETE Patient (Void/Retire)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/{{patient_uuid}}?reason=APITestCleanup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient",
+                "{{patient_uuid}}?reason=APITestCleanup"
+              ]
+            },
+            "description": "Void/retire the test patient. OpenMRS soft-deletes (voids) rather than hard-deletes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_011 | Status 204 No Content (voided)\", function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 \u2014 Person API",
+      "description": "Person resource \u2014 underlying data for Patient.",
+      "item": [
+        {
+          "name": "API_012 \u2014 GET All Persons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person?v=simple&limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "person?v=simple&limit=5"
+              ]
+            },
+            "description": "Retrieve list of persons."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_012 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_012 | Results is array\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_013 \u2014 POST Create Person",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "person"
+              ]
+            },
+            "description": "Create a new person record.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"names\": [\n    {\n      \"givenName\": \"PersonAPI\",\n      \"familyName\": \"Test\"\n    }\n  ],\n  \"gender\": \"F\",\n  \"birthdate\": \"1992-08-20\",\n  \"addresses\": [\n    {\n      \"address1\": \"456 Test Lane\",\n      \"cityVillage\": \"Hyderabad\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_013 | Status 201 Created\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"API_013 | UUID present\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"uuid\");",
+                  "});",
+                  "pm.test(\"API_013 | Gender saved correctly\", function() {",
+                  "    pm.expect(pm.response.json().gender).to.equal(\"F\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_014 \u2014 GET Person by UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person/{{patient_uuid}}?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "person",
+                "{{patient_uuid}}?v=full"
+              ]
+            },
+            "description": "Get person details by UUID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_014 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_014 | Names array present\", function() {",
+                  "    pm.expect(pm.response.json().names).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 \u2014 Visit API",
+      "description": "Visit resource \u2014 represents a patient visit/appointment.",
+      "item": [
+        {
+          "name": "API_015 \u2014 GET All Visits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visit?v=simple&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visit?v=simple&limit=10"
+              ]
+            },
+            "description": "Retrieve list of visits."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_015 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_015 | Results array exists\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  "var results = pm.response.json().results;",
+                  "if (results.length > 0) {",
+                  "    pm.collectionVariables.set(\"visit_uuid\", results[0].uuid);",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_016 \u2014 POST Create Visit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visit"
+              ]
+            },
+            "description": "Create a visit for the test patient.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": \"{{patient_uuid}}\",\n  \"visitType\": \"7b0f5697-27e3-40c4-8bae-f4049abfb4ed\",\n  \"location\": \"8d6c993e-c2cc-11de-8d13-0010c6dffd0f\",\n  \"startDatetime\": \"2024-01-15T10:00:00.000+0000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_016 | Status 201 Created\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"API_016 | Visit UUID saved\", function() {",
+                  "    var uuid = pm.response.json().uuid;",
+                  "    pm.expect(uuid).to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"visit_uuid\", uuid);",
+                  "    console.log(\"Visit UUID: \" + uuid);",
+                  "});",
+                  "pm.test(\"API_016 | Patient UUID matches\", function() {",
+                  "    pm.expect(pm.response.json().patient.uuid)",
+                  "      .to.equal(pm.collectionVariables.get(\"patient_uuid\"));",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_017 \u2014 GET Visit by UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visit/{{visit_uuid}}?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visit",
+                "{{visit_uuid}}?v=full"
+              ]
+            },
+            "description": "Retrieve full visit details."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_017 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_017 | UUID matches\", function() {",
+                  "    pm.expect(pm.response.json().uuid)",
+                  "      .to.equal(pm.collectionVariables.get(\"visit_uuid\"));",
+                  "});",
+                  "pm.test(\"API_017 | startDatetime is present\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"startDatetime\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_018 \u2014 POST End Visit (stopDatetime)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visit/{{visit_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visit",
+                "{{visit_uuid}}"
+              ]
+            },
+            "description": "End a visit by setting stopDatetime.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stopDatetime\": \"2024-01-15T18:00:00.000+0000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_018 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_018 | stopDatetime is set\", function() {",
+                  "    pm.expect(pm.response.json().stopDatetime).to.not.be.null;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_019 \u2014 GET Visits for a Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/visit?patient={{patient_uuid}}&v=simple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "visit?patient={{patient_uuid}}&v=simple"
+              ]
+            },
+            "description": "Get all visits for a specific patient."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_019 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_019 | Results is array\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 \u2014 Encounter API",
+      "description": "Encounter resource \u2014 clinical interactions during a visit.",
+      "item": [
+        {
+          "name": "API_020 \u2014 GET All Encounters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/encounter?v=simple&limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "encounter?v=simple&limit=5"
+              ]
+            },
+            "description": "Retrieve list of encounters."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_020 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_020 | Results array exists\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  "var results = pm.response.json().results;",
+                  "if (results.length > 0) {",
+                  "    pm.collectionVariables.set(\"encounter_uuid\", results[0].uuid);",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_021 \u2014 POST Create Encounter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/encounter",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "encounter"
+              ]
+            },
+            "description": "Create an encounter linked to patient and visit.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"encounterType\": \"54df38cb-bfba-4235-9a49-2f9beee5c4e7\",\n  \"patient\": \"{{patient_uuid}}\",\n  \"visit\": \"{{visit_uuid}}\",\n  \"encounterDatetime\": \"2024-01-15T11:00:00.000+0000\",\n  \"location\": \"8d6c993e-c2cc-11de-8d13-0010c6dffd0f\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_021 | Status 201 Created\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"API_021 | Encounter UUID present\", function() {",
+                  "    var uuid = pm.response.json().uuid;",
+                  "    pm.expect(uuid).to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"encounter_uuid\", uuid);",
+                  "});",
+                  "pm.test(\"API_021 | Patient UUID matches\", function() {",
+                  "    pm.expect(pm.response.json().patient.uuid)",
+                  "      .to.equal(pm.collectionVariables.get(\"patient_uuid\"));",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_022 \u2014 GET Encounter by UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/encounter/{{encounter_uuid}}?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "encounter",
+                "{{encounter_uuid}}?v=full"
+              ]
+            },
+            "description": "Retrieve full encounter details."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_022 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_022 | encounterDatetime present\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"encounterDatetime\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 \u2014 User API",
+      "description": "User resource \u2014 system user management.",
+      "item": [
+        {
+          "name": "API_023 \u2014 GET All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user?v=simple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user?v=simple"
+              ]
+            },
+            "description": "Retrieve list of system users."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_023 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_023 | Results array exists\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"API_023 | Admin user present in list\", function() {",
+                  "    var found = pm.response.json().results.some(function(u) {",
+                  "        return u.display && u.display.toLowerCase().includes(\"admin\");",
+                  "    });",
+                  "    pm.expect(found).to.be.true;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_024 \u2014 GET Current Logged-in User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/current?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "current?v=full"
+              ]
+            },
+            "description": "Get the currently authenticated user details."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_024 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_024 | Username is admin\", function() {",
+                  "    pm.expect(pm.response.json().username).to.equal(\"admin\");",
+                  "});",
+                  "pm.test(\"API_024 | Roles array is not empty\", function() {",
+                  "    pm.expect(pm.response.json().roles).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 \u2014 Concept API",
+      "description": "Concept dictionary \u2014 medical terminology used across OpenMRS.",
+      "item": [
+        {
+          "name": "API_025 \u2014 GET All Concepts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/concept?v=simple&limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "concept?v=simple&limit=5"
+              ]
+            },
+            "description": "Retrieve list of concepts from the dictionary."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_025 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_025 | Results is array\", function() {",
+                  "    pm.expect(pm.response.json().results).to.be.an(\"array\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_026 \u2014 GET Concept by Name Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/concept?q=Blood+Pressure&v=simple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "concept?q=Blood+Pressure&v=simple"
+              ]
+            },
+            "description": "Search concept dictionary for 'Blood Pressure'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_026 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_026 | Results returned for 'Blood Pressure'\", function() {",
+                  "    pm.expect(pm.response.json().results.length).to.be.greaterThan(0);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 \u2014 Schema & Response Validation",
+      "description": "Validate response structure, headers, and data types.",
+      "item": [
+        {
+          "name": "API_027 \u2014 Validate Patient Schema Fields",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/{{patient_uuid}}?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient",
+                "{{patient_uuid}}?v=full"
+              ]
+            },
+            "description": "Verify patient response contains all expected schema fields."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_027 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var schema = {",
+                  "    \"type\": \"object\",",
+                  "    \"required\": [\"uuid\",\"identifiers\",\"person\",\"voided\"],",
+                  "    \"properties\": {",
+                  "        \"uuid\":        {\"type\": \"string\"},",
+                  "        \"identifiers\": {\"type\": \"array\"},",
+                  "        \"person\":      {\"type\": \"object\"},",
+                  "        \"voided\":      {\"type\": \"boolean\"}",
+                  "    }",
+                  "};",
+                  "pm.test(\"API_027 | Response matches patient schema\", function() {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.all.keys(\"uuid\",\"identifiers\",\"person\",\"voided\");",
+                  "    pm.expect(json.uuid).to.be.a(\"string\");",
+                  "    pm.expect(json.identifiers).to.be.an(\"array\");",
+                  "    pm.expect(json.voided).to.be.a(\"boolean\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_028 \u2014 Validate Response Headers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?v=simple&limit=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?v=simple&limit=1"
+              ]
+            },
+            "description": "Verify all required response headers are present."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_028 | Content-Type is application/json\", function() {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"API_028 | Response time < 3000ms\", function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "pm.test(\"API_028 | Response is not empty\", function() {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_029 \u2014 Validate Pagination (limit and startIndex)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?v=simple&limit=5&startIndex=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?v=simple&limit=5&startIndex=0"
+              ]
+            },
+            "description": "Verify pagination parameters work correctly."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_029 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_029 | Results count respects limit\", function() {",
+                  "    pm.expect(pm.response.json().results.length).to.be.at.most(5);",
+                  "});",
+                  "pm.test(\"API_029 | links array present for pagination\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"links\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_030 \u2014 Verify v=ref vs v=full representation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?v=ref&limit=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?v=ref&limit=1"
+              ]
+            },
+            "description": "v=ref should return minimal data; v=full returns all fields."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_030 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_030 | ref representation has uuid and display only\", function() {",
+                  "    var first = pm.response.json().results[0];",
+                  "    pm.expect(first).to.have.property(\"uuid\");",
+                  "    pm.expect(first).to.have.property(\"display\");",
+                  "    // ref should NOT have full person object",
+                  "    pm.expect(first.person).to.be.undefined;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 \u2014 Negative & Edge Cases",
+      "description": "Boundary conditions, invalid inputs, and security edge cases.",
+      "item": [
+        {
+          "name": "API_031 \u2014 GET with Invalid Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invalidendpoint",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "invalidendpoint"
+              ]
+            },
+            "description": "Verify 404 for a completely wrong endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_031 | Status 404 Not Found\", function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_032 \u2014 POST with Empty Body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient"
+              ]
+            },
+            "description": "Verify 400 for empty request body on POST."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_032 | Status 400 Bad Request\", function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"API_032 | Error object in response\", function() {",
+                  "    pm.expect(pm.response.json()).to.have.property(\"error\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_033 \u2014 GET with SQL Injection in Query Param",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?q='; DROP TABLE patient;--",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?q='; DROP TABLE patient;--"
+              ]
+            },
+            "description": "Verify API handles SQL injection safely \u2014 no 500 error, no data leak."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_033 | No 500 Server Error on SQL injection attempt\", function() {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "pm.test(\"API_033 | Response is valid JSON\", function() {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_034 \u2014 GET with XSS Payload in Query",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?q=<script>alert('xss')</script>",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient?q=<script>alert('xss')<",
+                "script>"
+              ]
+            },
+            "description": "Verify XSS payload in query param does not cause server error."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_034 | No 500 error on XSS payload\", function() {",
+                  "    pm.expect(pm.response.code).to.not.equal(500);",
+                  "});",
+                  "pm.test(\"API_034 | Response does not echo script tag\", function() {",
+                  "    pm.expect(pm.response.text()).to.not.include(\"<script>\");",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API_035 \u2014 GET Voided Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient/{{patient_uuid}}?v=full",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient",
+                "{{patient_uuid}}?v=full"
+              ]
+            },
+            "description": "After voiding a patient (API_011), verify voided=true in response."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "pm.test(\"API_035 | Status 200 OK\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"API_035 | Patient is voided\", function() {",
+                  "    pm.expect(pm.response.json().voided).to.be.true;",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
