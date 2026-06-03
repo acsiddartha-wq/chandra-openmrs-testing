@@ -1,7 +1,7 @@
 # 🏥 OpenMRS Healthcare Testing Project
 
 **Author:** Chandra Siddartha | **Email:** acsiddartha@gmail.com
-**App Under Test:** OpenMRS — Open Medical Record System | **Target:** Optum
+**App Under Test:** OpenMRS — Open Medical Record System | **Domain:** Healthcare (EHR System)
 
 ## Project Overview
 End-to-end QA project testing OpenMRS, a real-world healthcare app used in hospitals globally.
